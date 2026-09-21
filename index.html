@@ -577,6 +577,9 @@
   .msf-item:hover{background:var(--canvas);}
   .msf-item input{accent-color:var(--teal);width:14px;height:14px;flex:none;cursor:pointer;}
   .msf-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .msf-item span.msf-count{flex:none;overflow:visible;margin-left:auto;padding-left:8px;font-size:.9em;color:var(--text-400);font-variant-numeric:tabular-nums;}
+  .msf-item.msf-item-zero{opacity:.42;}
+  .msf-item.msf-item-zero span.msf-count{color:var(--text-400);}
   .msf-empty{font-size:.82em;color:var(--text-400);padding:8px 6px;}
 
   section.panel{scroll-margin-top:88px;margin-bottom:36px;}
@@ -919,22 +922,23 @@
     border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-card);
     overflow-x:auto;
   }
-  table{width:100%;border-collapse:collapse;font-size:.88em;}
+  table{width:100%;border-collapse:collapse;font-size:.76em;}
   thead th{
-    text-align:left;font-size:.72em;letter-spacing:.04em;text-transform:uppercase;
-    color:var(--text-400);padding:10px 12px;border-bottom:2px solid var(--line);
+    text-align:left;font-size:.68em;letter-spacing:.02em;text-transform:uppercase;
+    color:var(--text-400);padding:7px 8px;border-bottom:2px solid var(--line);
     white-space:nowrap;cursor:pointer;user-select:none;
   }
   thead th:hover{color:var(--teal-dark);}
   thead th .sort-arrow{opacity:.4;margin-left:3px;font-size:.9em;}
   thead th.sorted .sort-arrow{opacity:1;color:var(--teal-dark);}
-  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--text-900);}
+  tbody td{padding:7px 8px;border-bottom:1px solid var(--line);color:var(--text-900);white-space:nowrap;}
   tbody tr:hover{background:var(--surface-alt);}
   tbody td.mono{font-family:'IBM Plex Mono',monospace;font-size:.94em;color:var(--text-600);}
+  tbody td.wrap-cell{white-space:normal;min-width:160px;max-width:240px;}
 
   .badge{
-    display:inline-flex;align-items:center;gap:5px;
-    padding:4px 10px;border-radius:20px;font-size:.78em;font-weight:600;
+    display:inline-flex;align-items:center;gap:4px;
+    padding:3px 8px;border-radius:20px;font-size:.78em;font-weight:600;
   }
   .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
   .badge-success{background:var(--teal-100);color:var(--teal-dark);}
@@ -2131,11 +2135,63 @@ function initMultiSelect(key, fieldId, col, getSet){
   updateMultiSelectTrigger(key);
 }
 
+// Rows that pass every active filter EXCEPT the one identified by excludeKey.
+// This is what powers cross-filtering: a filter's own options must not be
+// restricted by its own current selection (otherwise you could never widen
+// a selection), but they SHOULD be restricted by every other active filter.
+function rowsPassingOtherFilters(excludeKey){
+  return allData.filter(row => {
+    if (excludeKey !== 'type'     && !passesSetFilter(filterState.type, row[COLS.type])) return false;
+    if (excludeKey !== 'unit'     && !passesSetFilter(filterState.unit, row[COLS.unit])) return false;
+    if (excludeKey !== 'person'   && !passesSetFilter(filterState.person, row[COLS.person])) return false;
+    if (excludeKey !== 'status'   && !passesSetFilter(filterState.status, row[COLS.status])) return false;
+    if (excludeKey !== 'criteria' && !passesSetFilter(filterState.criteria, row[COLS.criteria])) return false;
+    if (excludeKey !== 'dataOk'   && !passesSetFilter(filterState.dataOk, row[COLS.dataOk])) return false;
+    if (excludeSkp && String(row[COLS.unit] || '').includes(SKP_MATCH)) return false;
+    for (const col in extraFilterState){
+      const key = 'extra:' + col;
+      if (excludeKey !== key && !passesSetFilter(extraFilterState[col], row[col])) return false;
+    }
+    return true;
+  });
+}
+
+// Re-render every filter dropdown's option list/counts so they reflect the
+// current combination of selections in the OTHER filters. Cheap enough to
+// call after any filter change since the dataset is a few hundred rows.
+function refreshFilterOptions(){
+  Object.keys(msRegistry).forEach(k => {
+    renderMultiSelectList(k);
+    updateMultiSelectTrigger(k);
+  });
+}
+
 function renderMultiSelectList(key){
   const cfg = msRegistry[key];
   const field = document.getElementById(cfg.fieldId);
   const listEl = field.querySelector('.msf-list');
   const set = cfg.getSet();
+
+  // Recompute the option list + per-option counts from rows that satisfy every
+  // OTHER active filter. Any value currently selected in this same filter is
+  // always kept visible (with a count of 0 if it no longer matches) so a
+  // selection never silently disappears from the list.
+  if (cfg.col){
+    const baseRows = rowsPassingOtherFilters(key);
+    const counts = {};
+    baseRows.forEach(d => {
+      const v = d[cfg.col];
+      if (!v) return;
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    set.forEach(v => { if (!(v in counts)) counts[v] = 0; });
+    cfg.values = Object.keys(counts).sort((a,b) => String(a).localeCompare(String(b), 'th'));
+    cfg.counts = counts;
+  } else {
+    cfg.values = [];
+    cfg.counts = {};
+  }
+
   if (cfg.values.length === 0){
     listEl.innerHTML = '<div class="msf-empty">ไม่มีข้อมูลให้เลือก</div>';
     return;
@@ -2146,17 +2202,22 @@ function renderMultiSelectList(key){
     listEl.innerHTML = '<div class="msf-empty-search">ไม่พบรายการที่ค้นหา</div>';
     return;
   }
-  listEl.innerHTML = shown.map(v => `
-    <label class="msf-item">
+  listEl.innerHTML = shown.map(v => {
+    const c = cfg.counts ? (cfg.counts[v] || 0) : null;
+    const zeroCls = c === 0 ? ' msf-item-zero' : '';
+    return `
+    <label class="msf-item${zeroCls}">
       <input type="checkbox" value="${escapeAttr(v)}" ${set.has(v) ? 'checked' : ''}>
       <span>${escapeHtml(v)}</span>
-    </label>`).join('');
+    </label>`;
+  }).join('');
   listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) set.add(cb.value); else set.delete(cb.value);
       updateMultiSelectTrigger(key);
       currentPage = 1;
       applyFilters();
+      refreshFilterOptions();
     });
   });
 }
@@ -2198,6 +2259,7 @@ function wireMultiSelectField(key){
     updateMultiSelectTrigger(key);
     currentPage = 1;
     applyFilters();
+    refreshFilterOptions();
   });
 
   field.querySelector('[data-act="none"]').addEventListener('click', (e) => {
@@ -2207,6 +2269,7 @@ function wireMultiSelectField(key){
     updateMultiSelectTrigger(key);
     currentPage = 1;
     applyFilters();
+    refreshFilterOptions();
   });
 
   field.querySelector('.msf-panel').addEventListener('click', e => e.stopPropagation());
@@ -2413,6 +2476,7 @@ function toggleExcludeSkp(){
   btn.setAttribute('aria-pressed', String(excludeSkp));
   currentPage = 1;
   applyFilters();
+  refreshFilterOptions();
 }
 
 function applyFilters(){
@@ -2462,6 +2526,7 @@ function resetFilters(){
   if (skpBtn){ skpBtn.classList.add('on'); skpBtn.setAttribute('aria-pressed', 'true'); }
   currentPage = 1;
   applyFilters();
+  refreshFilterOptions();
 }
 
 /* ============ orchestration ============ */
@@ -3221,8 +3286,12 @@ function buildDataRowCells(d, colDefs){
     if (def.role === 'status') return `<td>${d[def.field]==='แล้วเสร็จ' ? '<span class="badge badge-success">แล้วเสร็จ</span>' : '<span class="badge badge-warning">ดำเนินการอยู่</span>'}</td>`;
     if (def.role === 'criteria') return `<td>${d[def.field]==='เป็นไปตามเกณฑ์' ? '<span class="badge badge-success">ตามเกณฑ์</span>' : '<span class="badge badge-danger">ไม่ตามเกณฑ์</span>'}</td>`;
     if (def.role === 'dataOk') return `<td>${d[def.field]==='ครบถ้วน' ? '<span class="badge badge-success">ครบถ้วน</span>' : '<span class="badge badge-danger">ไม่ครบถ้วน</span>'}</td>`;
-    const mono = ['cpn','no','duration'].includes(def.role) ? ' class="mono"' : '';
-    return `<td${mono}>${escapeHtml(d[def.field]||'-')}</td>`;
+    let cls = ['cpn','no','duration'].includes(def.role) ? 'mono' : '';
+    if (String(def.field).trim() === 'ประเภทการดำเนินงาน' || String(def.label).trim() === 'ประเภทการดำเนินงาน') {
+      cls = cls ? cls + ' wrap-cell' : 'wrap-cell';
+    }
+    const clsAttr = cls ? ` class="${cls}"` : '';
+    return `<td${clsAttr}>${escapeHtml(d[def.field]||'-')}</td>`;
   }).join('');
 }
 
