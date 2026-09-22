@@ -506,6 +506,16 @@
     font-size:.85em;color:var(--text-900);background:var(--surface);cursor:pointer;outline:none;
   }
   .filter-field select:focus{border-color:var(--teal);}
+  .date-range-field{display:flex;flex-direction:column;gap:4px;}
+  .date-range-field label{font-size:.68em;color:var(--text-400);text-transform:uppercase;letter-spacing:.06em;}
+  .date-range-inputs{display:flex;align-items:center;gap:6px;}
+  .date-range-inputs input[type="date"]{
+    border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+    font-size:.82em;color:var(--text-900);background:var(--surface);cursor:pointer;outline:none;
+    font-family:'IBM Plex Mono',monospace;color-scheme:inherit;
+  }
+  .date-range-inputs input[type="date"]:focus{border-color:var(--teal);}
+  .date-range-inputs span{color:var(--text-400);font-size:.8em;}
   .filterbar .reset-btn{
     margin-left:auto;border:none;background:none;color:var(--text-600);
     font-size:.82em;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
@@ -1236,6 +1246,14 @@
               <div class="msf-list"></div>
             </div>
           </div>
+          <div class="date-range-field" id="dateFilterField" style="display:none;">
+            <label>ช่วงวันที่</label>
+            <div class="date-range-inputs">
+              <input type="date" id="dateFromInput" aria-label="จากวันที่">
+              <span>–</span>
+              <input type="date" id="dateToInput" aria-label="ถึงวันที่">
+            </div>
+          </div>
           <div id="extraFiltersContainer" style="display:contents;"></div>
           <button type="button" class="exclude-toggle on" id="excludeSkpToggle" onclick="toggleExcludeSkp()" aria-pressed="true">
             <span class="sw"></span>
@@ -1492,7 +1510,7 @@ const OVERDUE_DAYS = 45;
 const TEMPLATE_COLS = {
   cpn:'CPN', no:'No.', type:'ประเภทเรื่อง', unit:'หน่วยงาน', person:'ผู้รับผิดชอบ',
   status:'สถานะการดำเนินงาน', criteria:'เป็นไปตามเกณฑ์การปฏิบัติงาน',
-  duration:'จำนวนวันดำเนินการ (วัน)', dataOk:'การนำเข้าข้อมูล'
+  duration:'จำนวนวันดำเนินการ (วัน)', dataOk:'การนำเข้าข้อมูล', date:'วันที่'
 };
 
 /* actual mapping, detected per uploaded file - not hardcoded */
@@ -1506,6 +1524,11 @@ let filterState = { type:new Set(), unit:new Set(), person:new Set(), status:new
 let extraFilterState = {}; // { [columnName]: Set<selectedValue> }
 let msRegistry = {}; // key -> { fieldId, values, allLabel, getSet() }
 
+// date-range filter state: 'YYYY-MM-DD' strings from the <input type="date"> fields,
+// or '' when that end of the range is unrestricted. Applies to COLS.date when mapped.
+let dateFilterFrom = '';
+let dateFilterTo = '';
+
 // quick toggle: when true, rows whose หน่วยงาน (unit) contains "สคพ." are excluded,
 // independently of whatever the unit multi-select filter is set to.
 let excludeSkp = false;
@@ -1513,7 +1536,7 @@ const SKP_MATCH = 'สคพ';
 
 const ROLE_LABELS = {
   cpn:'CPN', no:'No.', type:'ประเภทเรื่อง', unit:'หน่วยงาน', person:'ผู้รับผิดชอบ',
-  status:'สถานะ', criteria:'เกณฑ์', duration:'จำนวนวัน', dataOk:'ข้อมูล'
+  status:'สถานะ', criteria:'เกณฑ์', duration:'จำนวนวัน', dataOk:'ข้อมูล', date:'วันที่'
 };
 
 const ROLE_ALIASES = {
@@ -1525,7 +1548,8 @@ const ROLE_ALIASES = {
   status: ['สถานะการดำเนินงาน', 'สถานะ', 'สถานะงาน'],
   criteria: ['เป็นไปตามเกณฑ์การปฏิบัติงาน', 'เกณฑ์การปฏิบัติงาน', 'เกณฑ์', 'เป็นไปตามเกณฑ์'],
   duration: ['จำนวนวันดำเนินการ (วัน)', 'จำนวนวันดำเนินการ', 'จำนวนวัน', 'ระยะเวลาดำเนินการ (วัน)', 'ระยะเวลาดำเนินการ'],
-  dataOk: ['การนำเข้าข้อมูล', 'ความครบถ้วนของข้อมูล', 'ข้อมูลครบถ้วน']
+  dataOk: ['การนำเข้าข้อมูล', 'ความครบถ้วนของข้อมูล', 'ข้อมูลครบถ้วน'],
+  date: ['วันที่', 'วันที่รับเรื่อง', 'วันที่บันทึก', 'วันที่ดำเนินการ', 'วันที่รับแจ้ง', 'date']
 };
 
 /* detect which real CSV headers correspond to each known "role", and collect the rest as extras */
@@ -1819,7 +1843,8 @@ const MAPPING_ROLES = [
   { role:'status', label:'สถานะการดำเนินงาน', required:false },
   { role:'criteria', label:'เป็นไปตามเกณฑ์การปฏิบัติงาน', required:false },
   { role:'duration', label:'จำนวนวันดำเนินการ (วัน)', required:false },
-  { role:'dataOk', label:'การนำเข้าข้อมูล', required:false }
+  { role:'dataOk', label:'การนำเข้าข้อมูล', required:false },
+  { role:'date', label:'วันที่', required:false }
 ];
 
 // trim every cell so hidden leading/trailing spaces (very common from Excel exports)
@@ -2046,10 +2071,10 @@ function uploadNewFile(){
 
 function downloadSample(){
   const c = TEMPLATE_COLS;
-  const header = [c.cpn, c.no, c.type, c.unit, c.person, c.status, c.criteria, c.duration, c.dataOk];
+  const header = [c.cpn, c.no, c.type, c.unit, c.person, c.status, c.criteria, c.duration, c.dataOk, c.date];
   const rows = [
-    ['CPN-0001','1','เรื่องร้องเรียน','ฝ่ายบริการลูกค้า','สมชาย ใจดี','แล้วเสร็จ','เป็นไปตามเกณฑ์','12','ครบถ้วน'],
-    ['CPN-0002','2','เรื่องขอข้อมูล','ฝ่ายปฏิบัติการ','สมหญิง รักงาน','อยู่ระหว่างดำเนินการ','ไม่เป็นไปตามเกณฑ์','52','ไม่ครบถ้วน']
+    ['CPN-0001','1','เรื่องร้องเรียน','ฝ่ายบริการลูกค้า','สมชาย ใจดี','แล้วเสร็จ','เป็นไปตามเกณฑ์','12','ครบถ้วน','01/03/2025'],
+    ['CPN-0002','2','เรื่องขอข้อมูล','ฝ่ายปฏิบัติการ','สมหญิง รักงาน','อยู่ระหว่างดำเนินการ','ไม่เป็นไปตามเกณฑ์','52','ไม่ครบถ้วน','15/04/2025']
   ];
   const csv = [header, ...rows].map(r => r.join(',')).join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -2066,7 +2091,8 @@ function buildColumnDefs(){
   const known = [
     { role:'cpn', label:'CPN' }, { role:'no', label:'No.' }, { role:'type', label:'ประเภทเรื่อง' },
     { role:'unit', label:'หน่วยงาน' }, { role:'person', label:'ผู้รับผิดชอบ' }, { role:'status', label:'สถานะ' },
-    { role:'criteria', label:'เกณฑ์' }, { role:'duration', label:'จำนวนวัน' }, { role:'dataOk', label:'ข้อมูล' }
+    { role:'criteria', label:'เกณฑ์' }, { role:'duration', label:'จำนวนวัน' }, { role:'dataOk', label:'ข้อมูล' },
+    { role:'date', label:'วันที่' }
   ];
   const defs = [];
   known.forEach(k => { if (COLS[k.role]) defs.push({ field: COLS[k.role], label: k.label, role: k.role }); });
@@ -2115,6 +2141,9 @@ function populateFilters(){
   initMultiSelect('status', 'statusFilterField', COLS.status, () => filterState.status);
   initMultiSelect('criteria', 'criteriaFilterField', COLS.criteria, () => filterState.criteria);
   initMultiSelect('dataOk', 'dataFilterField', COLS.dataOk, () => filterState.dataOk);
+
+  const dateField = document.getElementById('dateFilterField');
+  if (dateField) dateField.style.display = COLS.date ? 'flex' : 'none';
 }
 
 // distinct, sorted, non-empty values found in allData for a given column
@@ -2147,6 +2176,7 @@ function rowsPassingOtherFilters(excludeKey){
     if (excludeKey !== 'status'   && !passesSetFilter(filterState.status, row[COLS.status])) return false;
     if (excludeKey !== 'criteria' && !passesSetFilter(filterState.criteria, row[COLS.criteria])) return false;
     if (excludeKey !== 'dataOk'   && !passesSetFilter(filterState.dataOk, row[COLS.dataOk])) return false;
+    if (!passesDateRangeFilter(row)) return false;
     if (excludeSkp && String(row[COLS.unit] || '').includes(SKP_MATCH)) return false;
     for (const col in extraFilterState){
       const key = 'extra:' + col;
@@ -2412,6 +2442,14 @@ function setupEventListeners(){
   // built-in and extra filters are wired individually inside initMultiSelect/wireMultiSelectField
 
   document.getElementById('searchInput').addEventListener('input', debounce(() => { currentPage = 1; applyFilters(); }, 180));
+  const dateFromEl = document.getElementById('dateFromInput');
+  const dateToEl = document.getElementById('dateToInput');
+  if (dateFromEl) dateFromEl.addEventListener('change', () => {
+    dateFilterFrom = dateFromEl.value; currentPage = 1; applyFilters(); refreshFilterOptions();
+  });
+  if (dateToEl) dateToEl.addEventListener('change', () => {
+    dateFilterTo = dateToEl.value; currentPage = 1; applyFilters(); refreshFilterOptions();
+  });
 
   document.getElementById('dataTableSearchInput').addEventListener('input', debounce(e => {
     dataTableSearchQ = e.target.value.trim().toLowerCase();
@@ -2469,6 +2507,63 @@ function passesSetFilter(set, value){
   return set.size === 0 || set.has(value);
 }
 
+// Parses a date cell into a plain 'YYYY-MM-DD' string (or null if it can't be read), so it
+// can be compared directly against the 'YYYY-MM-DD' strings <input type="date"> produces.
+// Handles: Excel serial numbers (raw:true keeps these as numbers), gviz's raw
+// "Date(yyyy,m,d)" string (used when a sheet cell has no formatted display string),
+// ISO 'YYYY-MM-DD', and 'D/M/YYYY' or 'D-M-YYYY' style strings — the common CSV/Excel/Thai
+// government format — auto-correcting a Buddhist-era year (2400+) to Gregorian.
+function parseRowDate(value){
+  if (value === null || value === undefined || value === '') return null;
+
+  if (typeof value === 'number' && isFinite(value)){
+    // Excel serial date (days since 1899-12-30)
+    const ms = Math.round((value - 25569) * 86400 * 1000);
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const gvizMatch = s.match(/^Date\((\d+),(\d+),(\d+)/);
+  if (gvizMatch){
+    const y = parseInt(gvizMatch[1], 10), m = parseInt(gvizMatch[2], 10) + 1, d = parseInt(gvizMatch[3], 10);
+    return `${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso){
+    let y = parseInt(iso[1], 10);
+    if (y > 2400) y -= 543;
+    return `${String(y).padStart(4,'0')}-${String(iso[2]).padStart(2,'0')}-${String(iso[3]).padStart(2,'0')}`;
+  }
+
+  const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+  if (dmy){
+    let y = parseInt(dmy[3], 10);
+    if (y > 2400) y -= 543;
+    return `${String(y).padStart(4,'0')}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
+  }
+
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return null;
+}
+
+// true when the row's mapped date column falls within [dateFilterFrom, dateFilterTo]
+// (either end blank means unrestricted on that side); always true if no date column is
+// mapped, or if dateFilterFrom/dateFilterTo are both blank.
+function passesDateRangeFilter(row){
+  if (!COLS.date || (!dateFilterFrom && !dateFilterTo)) return true;
+  const d = parseRowDate(row[COLS.date]);
+  if (!d) return false;
+  if (dateFilterFrom && d < dateFilterFrom) return false;
+  if (dateFilterTo && d > dateFilterTo) return false;
+  return true;
+}
+
 function toggleExcludeSkp(){
   excludeSkp = !excludeSkp;
   const btn = document.getElementById('excludeSkpToggle');
@@ -2489,6 +2584,7 @@ function applyFilters(){
     if (!passesSetFilter(filterState.status, row[COLS.status])) return false;
     if (!passesSetFilter(filterState.criteria, row[COLS.criteria])) return false;
     if (!passesSetFilter(filterState.dataOk, row[COLS.dataOk])) return false;
+    if (!passesDateRangeFilter(row)) return false;
     if (excludeSkp && String(row[COLS.unit] || '').includes(SKP_MATCH)) return false;
     for (const col in extraFilterState){
       if (!passesSetFilter(extraFilterState[col], row[col])) return false;
@@ -2524,6 +2620,11 @@ function resetFilters(){
   excludeSkp = true;
   const skpBtn = document.getElementById('excludeSkpToggle');
   if (skpBtn){ skpBtn.classList.add('on'); skpBtn.setAttribute('aria-pressed', 'true'); }
+  dateFilterFrom = ''; dateFilterTo = '';
+  const dateFromEl = document.getElementById('dateFromInput');
+  const dateToEl = document.getElementById('dateToInput');
+  if (dateFromEl) dateFromEl.value = '';
+  if (dateToEl) dateToEl.value = '';
   currentPage = 1;
   applyFilters();
   refreshFilterOptions();
