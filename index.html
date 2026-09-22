@@ -506,16 +506,6 @@
     font-size:.85em;color:var(--text-900);background:var(--surface);cursor:pointer;outline:none;
   }
   .filter-field select:focus{border-color:var(--teal);}
-  .date-range-field{display:flex;flex-direction:column;gap:4px;}
-  .date-range-field label{font-size:.68em;color:var(--text-400);text-transform:uppercase;letter-spacing:.06em;}
-  .date-range-inputs{display:flex;align-items:center;gap:6px;}
-  .date-range-inputs input[type="date"]{
-    border:1px solid var(--line);border-radius:8px;padding:6px 8px;
-    font-size:.82em;color:var(--text-900);background:var(--surface);cursor:pointer;outline:none;
-    font-family:'IBM Plex Mono',monospace;color-scheme:inherit;
-  }
-  .date-range-inputs input[type="date"]:focus{border-color:var(--teal);}
-  .date-range-inputs span{color:var(--text-400);font-size:.8em;}
   .filterbar .reset-btn{
     margin-left:auto;border:none;background:none;color:var(--text-600);
     font-size:.82em;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
@@ -1192,6 +1182,33 @@
 
         <!-- FILTER BAR -->
         <div class="filterbar" id="filterbar">
+          <div class="filter-field msf" id="yearFilterField" data-ms-key="year" style="display:none;">
+            <label>ปี (Year)</label>
+            <button type="button" class="msf-trigger"><span class="msf-trigger-text">ทั้งหมด</span><svg class="msf-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="msf-panel">
+              <div class="msf-actions"><button type="button" class="msf-action" data-act="all">เลือกทั้งหมด</button><button type="button" class="msf-action" data-act="none">ล้าง</button></div>
+              <div class="msf-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="text" class="msf-search" placeholder="ค้นหา..."></div>
+              <div class="msf-list"></div>
+            </div>
+          </div>
+          <div class="filter-field msf" id="monthFilterField" data-ms-key="month" style="display:none;">
+            <label>เดือน (Month)</label>
+            <button type="button" class="msf-trigger"><span class="msf-trigger-text">ทั้งหมด</span><svg class="msf-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="msf-panel">
+              <div class="msf-actions"><button type="button" class="msf-action" data-act="all">เลือกทั้งหมด</button><button type="button" class="msf-action" data-act="none">ล้าง</button></div>
+              <div class="msf-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="text" class="msf-search" placeholder="ค้นหา..."></div>
+              <div class="msf-list"></div>
+            </div>
+          </div>
+          <div class="filter-field msf" id="dayFilterField" data-ms-key="day" style="display:none;">
+            <label>วัน (Day)</label>
+            <button type="button" class="msf-trigger"><span class="msf-trigger-text">ทั้งหมด</span><svg class="msf-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="msf-panel">
+              <div class="msf-actions"><button type="button" class="msf-action" data-act="all">เลือกทั้งหมด</button><button type="button" class="msf-action" data-act="none">ล้าง</button></div>
+              <div class="msf-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="text" class="msf-search" placeholder="ค้นหา..."></div>
+              <div class="msf-list"></div>
+            </div>
+          </div>
           <div class="filter-field msf" id="typeFilterField" data-ms-key="type">
             <label>ประเภทเรื่อง</label>
             <button type="button" class="msf-trigger"><span class="msf-trigger-text">ทั้งหมด</span><svg class="msf-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -1244,14 +1261,6 @@
               <div class="msf-actions"><button type="button" class="msf-action" data-act="all">เลือกทั้งหมด</button><button type="button" class="msf-action" data-act="none">ล้าง</button></div>
               <div class="msf-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="text" class="msf-search" placeholder="ค้นหา..."></div>
               <div class="msf-list"></div>
-            </div>
-          </div>
-          <div class="date-range-field" id="dateFilterField" style="display:none;">
-            <label>ช่วงวันที่</label>
-            <div class="date-range-inputs">
-              <input type="date" id="dateFromInput" aria-label="จากวันที่">
-              <span>–</span>
-              <input type="date" id="dateToInput" aria-label="ถึงวันที่">
             </div>
           </div>
           <div id="extraFiltersContainer" style="display:contents;"></div>
@@ -1520,14 +1529,11 @@ let EXTRA_COLS = []; // any columns found in the file that aren't one of the kno
 // multi-select filter state: a Set of selected values per filter. An empty Set means
 // "no restriction" (equivalent to the old 'all' option), any non-empty Set means
 // "show rows whose value is one of these".
-let filterState = { type:new Set(), unit:new Set(), person:new Set(), status:new Set(), criteria:new Set(), dataOk:new Set() };
+let filterState = { type:new Set(), unit:new Set(), person:new Set(), status:new Set(), criteria:new Set(), dataOk:new Set(), year:new Set(), month:new Set(), day:new Set() };
 let extraFilterState = {}; // { [columnName]: Set<selectedValue> }
 let msRegistry = {}; // key -> { fieldId, values, allLabel, getSet() }
 
-// date-range filter state: 'YYYY-MM-DD' strings from the <input type="date"> fields,
-// or '' when that end of the range is unrestricted. Applies to COLS.date when mapped.
-let dateFilterFrom = '';
-let dateFilterTo = '';
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 // quick toggle: when true, rows whose หน่วยงาน (unit) contains "สคพ." are excluded,
 // independently of whatever the unit multi-select filter is set to.
@@ -2125,12 +2131,35 @@ function numericExtraColumns(){
 // data-dependent parts of the UI without re-attaching click/change listeners
 // (which would otherwise stack up and double-fire on every sync).
 function initializeApp(skipEventBinding){
+  computeDateDerivedFields();
   populateFilters();
   renderExtraFilters();
   renderDataTableHeader();
   renderExtraAnalysis();
   if (!skipEventBinding) setupEventListeners();
   applyFilters();
+}
+
+// Derives synthetic '__year' (Buddhist Era), '__month' (Thai month name, numerically
+// prefixed so it sorts chronologically alongside the other filters' alphabetical sort), and
+// '__day' (zero-padded day-of-month) fields on every row from the mapped COLS.date column,
+// so Year/Month/Day can be plugged into the same multi-select filter engine as any other
+// categorical column.
+function computeDateDerivedFields(){
+  if (!COLS.date){ delete COLS.year; delete COLS.month; delete COLS.day; return; }
+  COLS.year = '__year';
+  COLS.month = '__month';
+  COLS.day = '__day';
+  allData.forEach(row => {
+    const iso = parseRowDate(row[COLS.date]);
+    if (!iso){ row.__year = ''; row.__month = ''; row.__day = ''; return; }
+    const y = parseInt(iso.slice(0, 4), 10);
+    const m = parseInt(iso.slice(5, 7), 10);
+    const d = parseInt(iso.slice(8, 10), 10);
+    row.__year = String(y + 543);
+    row.__month = String(m).padStart(2, '0') + ' - ' + THAI_MONTHS[m - 1];
+    row.__day = String(d).padStart(2, '0');
+  });
 }
 
 function populateFilters(){
@@ -2141,9 +2170,13 @@ function populateFilters(){
   initMultiSelect('status', 'statusFilterField', COLS.status, () => filterState.status);
   initMultiSelect('criteria', 'criteriaFilterField', COLS.criteria, () => filterState.criteria);
   initMultiSelect('dataOk', 'dataFilterField', COLS.dataOk, () => filterState.dataOk);
+  initMultiSelect('year', 'yearFilterField', COLS.year, () => filterState.year);
+  initMultiSelect('month', 'monthFilterField', COLS.month, () => filterState.month);
+  initMultiSelect('day', 'dayFilterField', COLS.day, () => filterState.day);
 
-  const dateField = document.getElementById('dateFilterField');
-  if (dateField) dateField.style.display = COLS.date ? 'flex' : 'none';
+  document.getElementById('yearFilterField').style.display = COLS.date ? '' : 'none';
+  document.getElementById('monthFilterField').style.display = COLS.date ? '' : 'none';
+  document.getElementById('dayFilterField').style.display = COLS.date ? '' : 'none';
 }
 
 // distinct, sorted, non-empty values found in allData for a given column
@@ -2176,7 +2209,9 @@ function rowsPassingOtherFilters(excludeKey){
     if (excludeKey !== 'status'   && !passesSetFilter(filterState.status, row[COLS.status])) return false;
     if (excludeKey !== 'criteria' && !passesSetFilter(filterState.criteria, row[COLS.criteria])) return false;
     if (excludeKey !== 'dataOk'   && !passesSetFilter(filterState.dataOk, row[COLS.dataOk])) return false;
-    if (!passesDateRangeFilter(row)) return false;
+    if (excludeKey !== 'year'     && !passesSetFilter(filterState.year, row[COLS.year])) return false;
+    if (excludeKey !== 'month'    && !passesSetFilter(filterState.month, row[COLS.month])) return false;
+    if (excludeKey !== 'day'      && !passesSetFilter(filterState.day, row[COLS.day])) return false;
     if (excludeSkp && String(row[COLS.unit] || '').includes(SKP_MATCH)) return false;
     for (const col in extraFilterState){
       const key = 'extra:' + col;
@@ -2442,14 +2477,6 @@ function setupEventListeners(){
   // built-in and extra filters are wired individually inside initMultiSelect/wireMultiSelectField
 
   document.getElementById('searchInput').addEventListener('input', debounce(() => { currentPage = 1; applyFilters(); }, 180));
-  const dateFromEl = document.getElementById('dateFromInput');
-  const dateToEl = document.getElementById('dateToInput');
-  if (dateFromEl) dateFromEl.addEventListener('change', () => {
-    dateFilterFrom = dateFromEl.value; currentPage = 1; applyFilters(); refreshFilterOptions();
-  });
-  if (dateToEl) dateToEl.addEventListener('change', () => {
-    dateFilterTo = dateToEl.value; currentPage = 1; applyFilters(); refreshFilterOptions();
-  });
 
   document.getElementById('dataTableSearchInput').addEventListener('input', debounce(e => {
     dataTableSearchQ = e.target.value.trim().toLowerCase();
@@ -2552,18 +2579,6 @@ function parseRowDate(value){
   return null;
 }
 
-// true when the row's mapped date column falls within [dateFilterFrom, dateFilterTo]
-// (either end blank means unrestricted on that side); always true if no date column is
-// mapped, or if dateFilterFrom/dateFilterTo are both blank.
-function passesDateRangeFilter(row){
-  if (!COLS.date || (!dateFilterFrom && !dateFilterTo)) return true;
-  const d = parseRowDate(row[COLS.date]);
-  if (!d) return false;
-  if (dateFilterFrom && d < dateFilterFrom) return false;
-  if (dateFilterTo && d > dateFilterTo) return false;
-  return true;
-}
-
 function toggleExcludeSkp(){
   excludeSkp = !excludeSkp;
   const btn = document.getElementById('excludeSkpToggle');
@@ -2584,7 +2599,9 @@ function applyFilters(){
     if (!passesSetFilter(filterState.status, row[COLS.status])) return false;
     if (!passesSetFilter(filterState.criteria, row[COLS.criteria])) return false;
     if (!passesSetFilter(filterState.dataOk, row[COLS.dataOk])) return false;
-    if (!passesDateRangeFilter(row)) return false;
+    if (!passesSetFilter(filterState.year, row[COLS.year])) return false;
+    if (!passesSetFilter(filterState.month, row[COLS.month])) return false;
+    if (!passesSetFilter(filterState.day, row[COLS.day])) return false;
     if (excludeSkp && String(row[COLS.unit] || '').includes(SKP_MATCH)) return false;
     for (const col in extraFilterState){
       if (!passesSetFilter(extraFilterState[col], row[col])) return false;
@@ -2620,11 +2637,6 @@ function resetFilters(){
   excludeSkp = true;
   const skpBtn = document.getElementById('excludeSkpToggle');
   if (skpBtn){ skpBtn.classList.add('on'); skpBtn.setAttribute('aria-pressed', 'true'); }
-  dateFilterFrom = ''; dateFilterTo = '';
-  const dateFromEl = document.getElementById('dateFromInput');
-  const dateToEl = document.getElementById('dateToInput');
-  if (dateFromEl) dateFromEl.value = '';
-  if (dateToEl) dateToEl.value = '';
   currentPage = 1;
   applyFilters();
   refreshFilterOptions();
