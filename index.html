@@ -493,12 +493,30 @@
   .content{padding:24px 28px 64px;}
 
   .filterbar{
-    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
     background:var(--surface);border:1px solid var(--line);
     border-radius:var(--radius-md);padding:14px 16px;margin-bottom:22px;
     box-shadow:var(--shadow-card);
     position:sticky;top:14px;z-index:30;
   }
+  .filterbar-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+  .filterbar-toggle{
+    display:flex;align-items:center;gap:7px;
+    border:1px solid var(--line);background:var(--surface-alt);border-radius:8px;
+    padding:7px 12px;font-size:.85em;font-weight:600;color:var(--text-900);
+    cursor:pointer;transition:border-color .15s ease, background .15s ease;
+  }
+  .filterbar-toggle:hover{border-color:var(--teal);color:var(--teal-dark);}
+  .filterbar-toggle svg{width:13px;height:13px;transition:transform .2s ease;flex-shrink:0;}
+  .filterbar.collapsed .filterbar-toggle svg{transform:rotate(-90deg);}
+  .filterbar-toggle .filter-active-dot{
+    width:6px;height:6px;border-radius:50%;background:var(--teal);display:none;flex-shrink:0;
+  }
+  .filterbar.has-active .filterbar-toggle .filter-active-dot{display:block;}
+  .filterbar-body{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    margin-top:12px;
+  }
+  .filterbar.collapsed .filterbar-body{display:none;}
   .filter-field{display:flex;flex-direction:column;gap:4px;min-width:150px;}
   .filter-field label{font-size:.68em;color:var(--text-400);text-transform:uppercase;letter-spacing:.06em;}
   .filter-field select{
@@ -509,7 +527,7 @@
   .filterbar .reset-btn{
     margin-left:auto;border:none;background:none;color:var(--text-600);
     font-size:.82em;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
-    align-self:flex-end;padding:7px 4px;
+    padding:7px 4px;
   }
   .filterbar .reset-btn:hover{color:var(--coral);}
   .exclude-toggle{
@@ -1008,6 +1026,7 @@
     .hero-wrap{grid-template-columns:1fr;}
     .hero-kpi-grid{grid-template-columns:1fr;}
     .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .charts-grid{grid-template-columns:repeat(auto-fit, minmax(min(420px,100%), 1fr));}
   }
   @media (max-width: 760px){
     .sidebar{
@@ -1022,8 +1041,27 @@
     .topbar{padding:12px 14px;margin:10px 12px 0;border-radius:14px;}
     .search-wrap{max-width:none;order:3;flex-basis:100%;}
     .topbar-title{order:1;}
+    .topbar-title small{display:none;}
     .stat-grid{grid-template-columns:1fr 1fr;}
     .chart-card canvas{max-height:220px;}
+    .charts-grid{grid-template-columns:1fr;}
+    .filterbar{position:static;top:auto;padding:12px;}
+    .filterbar-head{gap:8px;}
+    .filterbar-body{margin-top:10px;gap:8px;}
+    .filter-field{flex:1 1 calc(50% - 8px);min-width:130px;}
+    .filterbar .reset-btn{flex-basis:100%;text-align:right;order:5;}
+    .table-toolbar{flex-direction:column;align-items:stretch;}
+    .table-export-actions{margin-left:0;justify-content:flex-end;}
+  }
+  @media (max-width: 560px){
+    .icon-btn .btn-label{display:none;}
+    .icon-btn{padding:8px;}
+    .sync-wrap #autoRefreshSelect{display:none;}
+    .filter-field{flex:1 1 100%;}
+    .hero-copy h1{font-size:1.9em;}
+    .hero-stats{flex-wrap:wrap;gap:16px;}
+    .gauge-wrap{width:140px;height:140px;}
+    .stat-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -1168,11 +1206,11 @@
         </button>
         <button class="icon-btn" onclick="exportFilteredCSV()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-          ส่งออก CSV
+          <span class="btn-label">ส่งออก CSV</span>
         </button>
         <button class="icon-btn primary" onclick="window.print()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-          พิมพ์รายงาน
+          <span class="btn-label">พิมพ์รายงาน</span>
         </button>
       </div>
 
@@ -1180,6 +1218,16 @@
 
         <!-- FILTER BAR -->
         <div class="filterbar" id="filterbar">
+          <div class="filterbar-head">
+            <button type="button" class="filterbar-toggle" id="filterbarToggleBtn" aria-expanded="true" aria-controls="filterbarBody">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+              <span>ตัวกรอง</span>
+              <span class="filter-active-dot"></span>
+            </button>
+            <span class="active-count" id="activeCount">แสดง 0 รายการ</span>
+            <button class="reset-btn" onclick="resetFilters()">ล้างตัวกรองทั้งหมด</button>
+          </div>
+          <div class="filterbar-body" id="filterbarBody">
           <div class="filter-field msf" id="dayFilterField" data-ms-key="day" style="display:none;">
             <label>วัน (Day)</label>
             <button type="button" class="msf-trigger"><span class="msf-trigger-text">ทั้งหมด</span><svg class="msf-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -1266,8 +1314,7 @@
             <span class="sw"></span>
             <span class="lbl">ไม่รวมข้อมูล สคพ.</span>
           </button>
-          <span class="active-count" id="activeCount">แสดง 0 รายการ</span>
-          <button class="reset-btn" onclick="resetFilters()">ล้างตัวกรองทั้งหมด</button>
+          </div>
         </div>
 
         <!-- OVERVIEW -->
@@ -2442,6 +2489,22 @@ function initTheme(){
 }
 initTheme();
 
+let filterbarOpen = (function(){
+  try{
+    const saved = localStorage.getItem('filterbarOpen');
+    if (saved !== null) return saved === '1';
+  }catch(e){}
+  return !window.matchMedia('(max-width: 760px)').matches;
+})();
+function updateFilterbarUI(){
+  const bar = document.getElementById('filterbar');
+  const btn = document.getElementById('filterbarToggleBtn');
+  if (!bar) return;
+  bar.classList.toggle('collapsed', !filterbarOpen);
+  if (btn) btn.setAttribute('aria-expanded', filterbarOpen ? 'true' : 'false');
+  try{ localStorage.setItem('filterbarOpen', filterbarOpen ? '1' : '0'); }catch(e){}
+}
+
 let sidebarOpen = !window.matchMedia('(max-width: 760px)').matches;
 function updateSidebarUI(){
   const sb = document.getElementById('sidebar');
@@ -2501,6 +2564,12 @@ function setupEventListeners(){
 
   window.addEventListener('resize', debounce(updateSidebarUI, 150));
   updateSidebarUI();
+
+  document.getElementById('filterbarToggleBtn').addEventListener('click', () => {
+    filterbarOpen = !filterbarOpen;
+    updateFilterbarUI();
+  });
+  updateFilterbarUI();
 
   document.querySelectorAll('#performanceTable thead th').forEach(th => {
     th.addEventListener('click', () => {
@@ -2613,6 +2682,11 @@ function applyFilters(){
   });
 
   document.getElementById('activeCount').textContent = `แสดง ${filteredData.length.toLocaleString()} รายการ`;
+  const hasActiveFilters = q !== '' ||
+    Object.values(filterState).some(set => set.size > 0) ||
+    Object.values(extraFilterState).some(set => set.size > 0);
+  const bar = document.getElementById('filterbar');
+  if (bar) bar.classList.toggle('has-active', hasActiveFilters);
   updateAll();
 }
 
