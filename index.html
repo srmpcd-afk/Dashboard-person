@@ -764,8 +764,8 @@
   tr.st-total td:nth-child(6){border-left-color:rgba(255,255,255,.15);}
 
   .st-bar-cell{display:inline-flex;align-items:center;gap:8px;min-width:130px;justify-content:flex-end;}
-  .st-bar-track{width:76px;height:6px;border-radius:99px;background:var(--surface-alt);overflow:hidden;flex-shrink:0;}
-  .st-bar-fill{height:100%;border-radius:99px;min-width:3px;}
+  .st-bar-track{display:block;width:76px;height:6px;border-radius:99px;background:var(--line);overflow:hidden;flex-shrink:0;}
+  .st-bar-fill{display:block;height:100%;border-radius:99px;min-width:3px;}
   .st-bar-fill.success{background:var(--teal);}
   .st-bar-fill.complete{background:var(--violet);}
   .st-pct{font-weight:700;min-width:44px;display:inline-block;text-align:right;}
@@ -888,7 +888,14 @@
   }
 
   /* ---------- card detail modal (table) ---------- */
-  .card-detail-modal{max-width:1080px;}
+  .card-detail-modal{max-width:min(1680px,97vw);max-height:96vh;}
+  #cardDetailOverlay{padding:12px;}
+  .card-detail-table-wrap{padding:8px 16px 14px;}
+  #cardDetailTable{font-size:.8em;width:100%;}
+  #cardDetailTable thead th{padding:8px 6px;white-space:normal;line-height:1.25;}
+  #cardDetailTable tbody td{padding:5px 6px;white-space:normal;word-break:break-word;line-height:1.3;}
+  #cardDetailTable tbody td.wrap-cell{min-width:0;max-width:none;}
+  #cardDetailTable .badge{padding:2px 8px;font-size:.88em;white-space:nowrap;}
   .card-detail-modal .chart-modal-body{
     padding:0;display:block;align-items:initial;justify-content:initial;
   }
@@ -896,10 +903,34 @@
     display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
     padding:14px 22px;border-bottom:1px solid var(--line);
   }
-  .card-detail-table-wrap{overflow:auto;padding:0 22px 22px;}
+  .card-detail-table-wrap{overflow:auto;}
   .card-detail-table-wrap table{font-size:.86em;}
   .card-detail-table-wrap thead th{position:sticky;top:0;background:var(--surface);z-index:1;cursor:default;}
   .card-detail-empty{text-align:center;color:var(--text-400);padding:40px 20px;}
+
+
+  /* ---------- card detail: name-count summary ---------- */
+  .cd-summary{padding:16px 22px 18px;border-bottom:1px solid var(--line);background:var(--surface-alt);}
+  .cd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+  #cardDetailBody tr.cd-hl td{background:var(--amber-100);}
+  .cd-tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 14px;}
+  .cd-tile span{display:block;font-size:.76em;color:var(--text-400);margin-bottom:2px;}
+  .cd-tile b{font-family:'IBM Plex Mono',monospace;font-size:1.25em;color:var(--text-900);font-weight:600;}
+  .cd-tile b small{font-size:.6em;color:var(--text-400);font-weight:500;margin-left:4px;font-family:'IBM Plex Sans Thai',sans-serif;}
+  .cd-list-title{font-size:.84em;font-weight:600;color:var(--text-600);margin-bottom:8px;}
+  .cd-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 20px;max-height:190px;overflow-y:auto;padding-right:4px;}
+  .cd-item{display:grid;grid-template-columns:24px minmax(0,1fr) 44px;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);}
+  .cd-rank{grid-row:1 / span 2;font-family:'IBM Plex Mono',monospace;font-size:.76em;color:var(--text-400);text-align:center;}
+  .cd-name{font-size:.86em;color:var(--text-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cd-count{grid-row:1 / span 2;grid-column:3;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.92em;color:var(--violet);}
+  .cd-bar{grid-column:2;height:4px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px;}
+  .cd-bar i{display:block;height:100%;border-radius:99px;background:var(--violet);}
+  @media (max-width:640px){
+    .cd-summary{padding:14px 16px;}
+    .cd-tiles{gap:8px;}
+    .cd-tile{padding:8px 10px;}
+    .cd-list{grid-template-columns:1fr;}
+  }
 
   /* ---------- PDF preview modal ---------- */
   .pdf-preview-body{flex:1;padding:24px;overflow:auto;background:var(--canvas);display:flex;flex-direction:column;align-items:center;gap:22px;}
@@ -1373,7 +1404,7 @@
             </div>
             <div class="chart-card">
               <div class="chart-card-head">
-                <h3><i style="background:var(--amber)"></i>Top <select id="unitTopN" class="topn-select" onchange="onUnitTopNChange()"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ประสิทธิภาพตามหน่วยงาน</h3>
+                <h3><i style="background:var(--amber)"></i>Top <select id="unitTopN" class="topn-select" onchange="onUnitTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ประสิทธิภาพตามหน่วยงาน</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
               <div class="chart-sub">จำนวนงานทั้งหมดเทียบกับงานที่ตามเกณฑ์ รายหน่วยงาน เรียงจากมากไปน้อย</div>
@@ -1381,7 +1412,7 @@
             </div>
             <div class="chart-card">
               <div class="chart-card-head">
-                <h3><i style="background:#E8A33D"></i>Top <select id="unitRateTopN" class="topn-select" onchange="onUnitRateTopNChange()"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> อัตราเป็นไปตามเกณฑ์ (%)</h3>
+                <h3><i style="background:#E8A33D"></i>Top <select id="unitRateTopN" class="topn-select" onchange="onUnitRateTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> อัตราเป็นไปตามเกณฑ์ (%)</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
               <div class="chart-sub">% ของงานที่ผ่านเกณฑ์ในแต่ละหน่วยงาน เรียงจากมากไปน้อย</div>
@@ -1389,7 +1420,7 @@
             </div>
             <div class="chart-card">
               <div class="chart-card-head">
-                <h3><i style="background:#20C997"></i>Top <select id="unitProgressTopN" class="topn-select" onchange="onUnitProgressTopNChange()"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผลดำเนินการ (%) รายหน่วยงาน</h3>
+                <h3><i style="background:#20C997"></i>Top <select id="unitProgressTopN" class="topn-select" onchange="onUnitProgressTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผลดำเนินการ (%) รายหน่วยงาน</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
               <div class="chart-sub">ร้อยละของงานที่ดำเนินการแล้วเสร็จ เทียบกับที่ยังอยู่ระหว่างดำเนินการ แยกตามหน่วยงาน</div>
@@ -1411,12 +1442,20 @@
               <div class="chart-sub">สัดส่วนงานที่นำเข้าข้อมูลครบถ้วน</div>
               <canvas id="dataCompletenessChart"></canvas>
             </div>
+            <div class="chart-card">
+              <div class="chart-card-head">
+                <h3><i style="background:#6D6AF6"></i>Top <select id="personTopN" class="topn-select" onchange="onPersonTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผู้รับผิดชอบ (จำนวนงาน)</h3>
+                <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
+              </div>
+              <div class="chart-sub">จำนวนงานของผู้รับผิดชอบแต่ละคน เรียงจากมากไปน้อย · คลิกที่แท่งเพื่อดูรายละเอียดงาน</div>
+              <canvas id="personChart"></canvas>
+            </div>
             <div class="chart-card aging-card">
               <div class="chart-card-head">
                 <h3><span class="aging-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>Top <select id="agingTopN" class="topn-select" onchange="onAgingTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> งานยังไม่เสร็จนานที่สุด<span id="agingRiskBadge" class="aging-risk-badge" hidden></span></h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
-              <div class="chart-sub">เฉพาะงานที่ยังไม่เสร็จ เรียงจากจำนวนวันมากไปน้อย</div>
+              <div class="chart-sub">เฉพาะงานที่ยังไม่เสร็จ เรียงจากจำนวนวันมากไปน้อย · คลิกที่แท่งเพื่อดูงานของผู้รับผิดชอบ</div>
               <div class="aging-legend">
                 <span class="aging-legend-chip"><i style="background:#0EA5A0"></i>ปกติ (≤45 วัน)</span>
                 <span class="aging-legend-chip"><i style="background:#E8A33D"></i>ใกล้เกณฑ์ (46–60 วัน)</span>
@@ -2940,7 +2979,7 @@ function renderExtraAnalysis(){
           <h3><i style="background:#6D6AF6"></i>${escapeHtml(col)}</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
         </div>
-        <div class="chart-sub">จำนวนงานแบ่งตาม ${escapeHtml(col)}</div>
+        <div class="chart-sub">จำนวนงานแบ่งตาม ${escapeHtml(col)} · คลิกที่แท่งเพื่อดูรายละเอียด</div>
         <canvas id="${canvasId}"></canvas>
       </div>`);
   });
@@ -2960,6 +2999,67 @@ function renderExtraAnalysis(){
   if (subEl) subEl.textContent = grid.querySelectorAll('.chart-card').length + ' มุมมองข้อมูล';
 }
 
+// click a bar of an auto-detected category chart -> open the detail popup for that category
+function extraCategoryChartOptions(col){
+  return {
+    indexAxis:'y', responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false} },
+    scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'} }, y:{ grid:{display:false} } },
+    onClick:(evt, elements, chart) => {
+      if (!elements || !elements.length) return;
+      const label = chart.data.labels[elements[0].index];
+      openExtraCategoryDetail(col, label);
+    },
+    onHover:(evt, elements) => {
+      const t = evt && evt.native && evt.native.target;
+      if (t) t.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
+    }
+  };
+}
+
+// count how many rows each responsible person (same name) has, shown above the detail table
+function buildNameCountSummary(rows){
+  const field = COLS.person;
+  if (!field) return '';
+  const counts = {};
+  rows.forEach(d => { const n = String(d[field] ?? '').trim() || 'ไม่ระบุ'; counts[n] = (counts[n] || 0) + 1; });
+  const list = Object.entries(counts).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0],'th'));
+  if (!list.length) return '';
+  const max = list[0][1];
+  const grand = filteredData.length || 1;
+  const items = list.map(([n,c],i) => `
+    <div class="cd-item" title="${escapeAttr(n)}: ${c.toLocaleString()} รายการ">
+      <span class="cd-rank">${i+1}</span>
+      <span class="cd-name">${escapeHtml(n)}</span>
+      <span class="cd-count">${c.toLocaleString()}</span>
+      <div class="cd-bar"><i style="width:${(c/max*100).toFixed(1)}%"></i></div>
+    </div>`).join('');
+  return `<div class="cd-summary">
+    <div class="cd-tiles">
+      <div class="cd-tile"><span>จำนวนรายการ</span><b>${rows.length.toLocaleString()}<small>รายการ</small></b></div>
+      <div class="cd-tile"><span>จำนวนผู้รับผิดชอบ</span><b>${list.length.toLocaleString()}<small>คน</small></b></div>
+      <div class="cd-tile"><span>สัดส่วนของงานทั้งหมด</span><b>${(rows.length/grand*100).toFixed(1)}<small>%</small></b></div>
+    </div>
+    <div class="cd-list-title">จำนวนงานแยกตามชื่อผู้รับผิดชอบ (เรียงจากมากไปน้อย)</div>
+    <div class="cd-list">${items}</div>
+  </div>`;
+}
+
+function openExtraCategoryDetail(col, label){
+  const rows = filteredData.filter(d => (String(d[col] ?? '').trim() || 'ไม่ระบุ') === label);
+  const total = filteredData.length || 1;
+  const pct = (rows.length / total * 100).toFixed(1);
+  CARD_DETAIL_DEFS.extraCategory = {
+    title: () => `${col}: ${label}`,
+    sub: () => `${rows.length.toLocaleString()} รายการ (${pct}% ของงานทั้งหมด ${filteredData.length.toLocaleString()} งาน)`,
+    roles: ['cpn','no','type','unit','person','status'],
+    extraCols: [col],
+    summary: () => buildNameCountSummary(rows),
+    getRows: () => rows
+  };
+  openCardDetailModal('extraCategory');
+}
+
 // (re)compute extra chart/stat data whenever the filtered dataset changes
 function updateExtraCharts(){
   extraChartDefs.forEach(({ col, canvasId }) => {
@@ -2971,7 +3071,7 @@ function updateExtraCharts(){
     charts['extra_' + canvasId] = new Chart(el, {
       type:'bar',
       data:{ labels: sorted.map(s=>s[0]), datasets:[{ label:'จำนวนงาน', data: sorted.map(s=>s[1]), backgroundColor:'#6D6AF6', borderRadius:5 }] },
-      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:true, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'} }, y:{ grid:{display:false} } } }
+      options:extraCategoryChartOptions(col)
     });
   });
 
@@ -3026,7 +3126,7 @@ function createUnitChart(){
   });
   let rows = Object.entries(stats).map(([unit, s]) => ({ unit, total:s.total, meet:s.meet })).sort((a,b) => b.total - a.total);
   const topNSelect = document.getElementById('unitTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
   rows = rows.slice(0, topN);
 
   charts.unitChart = new Chart(document.getElementById('unitChart'), {
@@ -3059,7 +3159,7 @@ function createUnitRateChart(){
     .map(([unit, s]) => ({ unit, total:s.total, rate: s.total ? (s.meet/s.total*100) : 0 }))
     .sort((a,b) => b.rate - a.rate);
   const topNSelect = document.getElementById('unitRateTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
   rows = rows.slice(0, topN);
 
   const colorFor = r => {
@@ -3110,7 +3210,7 @@ function createUnitProgressChart(){
     inProgressRate: s.total ? ((s.total-s.completed)/s.total*100) : 0
   })).sort((a,b) => b.total - a.total);
   const topNSelect = document.getElementById('unitProgressTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
   rows = rows.slice(0, topN);
 
   charts.unitProgressChart = new Chart(el, {
@@ -3162,7 +3262,7 @@ function createTypeChart(){
   const stats = {};
   filteredData.forEach(d => { const t = d[COLS.type] || 'ไม่ระบุ'; stats[t] = (stats[t]||0)+1; });
   const topNSelect = document.getElementById('typeTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
   const sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1]).slice(0, topN);
   charts.typeChart = new Chart(el, {
     type:'bar',
@@ -3176,19 +3276,52 @@ function onTypeTopNChange(){
   createTypeChart();
 }
 
+function personChartOptions(){
+  return {
+    indexAxis:'y', responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false} },
+    scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'}, ticks:{ precision:0 } }, y:{ grid:{display:false} } },
+    onClick:(evt, elements, chart) => {
+      if (!elements || !elements.length) return;
+      openPersonDetail(chart.data.labels[elements[0].index]);
+    },
+    onHover:(evt, elements) => {
+      const t = evt && evt.native && evt.native.target;
+      if (t) t.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
+    }
+  };
+}
+
 function createPersonChart(){
   const el = document.getElementById('personChart');
   if (!el) return;
   const stats = {};
-  filteredData.forEach(d => { stats[d[COLS.person]] = (stats[d[COLS.person]]||0)+1; });
+  filteredData.forEach(d => { const n = String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ'; stats[n] = (stats[n]||0)+1; });
   const topNSelect = document.getElementById('personTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
-  const sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1]).slice(0, topN);
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
+  const sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'th')).slice(0, topN);
   charts.personChart = new Chart(el, {
     type:'bar',
-    data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'จำนวนงาน', data:sorted.map(s=>s[1]), backgroundColor:'#0EA5A0', borderRadius:5 }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:true, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'} }, y:{ grid:{display:false} } } }
+    data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'จำนวนงาน', data:sorted.map(s=>s[1]), backgroundColor:'#6D6AF6', borderRadius:5 }] },
+    options: personChartOptions()
   });
+}
+
+// click a bar -> popup with every case of that person, in the same columns as the raw data table
+function openPersonDetail(name){
+  const isDone = d => d[COLS.status] === 'แล้วเสร็จ';
+  const dur = d => parseFloat(d[COLS.duration]) || 0;
+  const rows = filteredData.filter(d => (String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ') === name);
+  rows.sort((a,b) => (isDone(a) - isDone(b)) || (dur(b) - dur(a)));   // open cases first, longest first
+  const done = rows.filter(isDone).length;
+  CARD_DETAIL_DEFS.personDetail = {
+    title: () => `งานของ ${name}`,
+    sub: () => `${rows.length.toLocaleString()} รายการ · แล้วเสร็จ ${done.toLocaleString()} · ยังไม่เสร็จ ${(rows.length - done).toLocaleString()}`,
+    roles: [],
+    allColumns: true,
+    getRows: () => rows
+  };
+  openCardDetailModal('personDetail');
 }
 
 function onPersonTopNChange(){
@@ -3214,32 +3347,31 @@ function createAgingChart(){
   const open = filteredData.filter(d => d[COLS.status] !== 'แล้วเสร็จ');
   const rows = open.map(d => {
     const cpnVal = (COLS.cpn && d[COLS.cpn]) ? String(d[COLS.cpn]).trim() : '';
-    const personVal = d[COLS.person] || 'ไม่ระบุ';
+    const personVal = String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ';
     const noVal = (COLS.no && d[COLS.no]) ? String(d[COLS.no]).trim().replace(/^'+/, '') : '';
-    // combine CPN + person so bars stay distinguishable even when the same CPN
-    // (e.g. case numbers that reset each month, like "69-1") repeats across rows
-    const label = cpnVal ? `${cpnVal} · ${personVal}` : personVal;
-    return { label, cpn: cpnVal, person: personVal, no: noVal, duration: parseFloat(d[COLS.duration]) || 0 };
+    // line 1 = CPN + running number of the received case, line 2 = responsible person
+    const line1 = [cpnVal, noVal].filter(Boolean).join(' · ');
+    return { line1, cpn: cpnVal, person: personVal, no: noVal, row: d, duration: parseFloat(d[COLS.duration]) || 0 };
   }).sort((a,b) => b.duration - a.duration);
 
   const topNSelect = document.getElementById('agingTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 10;
+  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
   const sorted = rows.slice(0, topN);
 
-  // even "CPN + person" can legitimately repeat (e.g. the same person has two
-  // separate open cases filed under the same case number) — these are genuinely
-  // different rows, not the same task shown twice. Disambiguate using each row's
-  // own "No." (ลำดับที่) so the label tells you which specific case it is,
-  // instead of an arbitrary (1)/(2) that looks like a display bug.
-  const labelCounts = {};
-  sorted.forEach(r => { labelCounts[r.label] = (labelCounts[r.label] || 0) + 1; });
+  // if two plotted rows still share the exact same label (no CPN/No. in the file), number them
+  const keyOf = r => r.line1 + '|' + r.person;
+  const keyCounts = {};
+  sorted.forEach(r => { keyCounts[keyOf(r)] = (keyCounts[keyOf(r)] || 0) + 1; });
   const seenSoFar = {};
   sorted.forEach(r => {
-    if (labelCounts[r.label] > 1){
-      seenSoFar[r.label] = (seenSoFar[r.label] || 0) + 1;
-      r.label = r.no ? `${r.label} (เลขที่ ${r.no})` : `${r.label} (${seenSoFar[r.label]})`;
+    const k = keyOf(r);
+    if (keyCounts[k] > 1){
+      seenSoFar[k] = (seenSoFar[k] || 0) + 1;
+      r.line1 = (r.line1 ? r.line1 + ' ' : '') + `(${seenSoFar[k]})`;
     }
+    r.label = r.line1 ? [r.line1, r.person] : [r.person];   // array => 2-line axis label
   });
+  agingSorted = sorted;
 
   if (sorted.length === 0){
     charts.agingChart = new Chart(el, { type:'bar', data:{ labels:[], datasets:[] }, options:{ responsive:true, maintainAspectRatio:true } });
@@ -3274,13 +3406,41 @@ function createAgingChart(){
         borderRadius:5
       }]
     },
-    options:{
-      indexAxis:'y', responsive:true, maintainAspectRatio:true,
-      plugins:{ legend:{ display:false },
-        tooltip:{ callbacks:{ afterLabel:(ctx)=> `ผู้รับผิดชอบ: ${sorted[ctx.dataIndex].person}` } } },
-      scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'}, title:{display:true,text:'วัน'} }, y:{ grid:{display:false} } }
-    }
+    options: agingChartOptions()
   });
+}
+
+let agingSorted = [];
+
+function agingChartOptions(){
+  return {
+    indexAxis:'y', responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ display:false },
+      tooltip:{ callbacks:{
+        title:(items)=> { const r = agingSorted[items[0].dataIndex]; return r ? (r.line1 || r.person) : ''; },
+        afterLabel:(ctx)=> `ผู้รับผิดชอบ: ${agingSorted[ctx.dataIndex].person}`
+      } } },
+    scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'}, title:{display:true,text:'วัน'} }, y:{ grid:{display:false} } },
+    onClick:(evt, elements) => { if (elements && elements.length) openAgingPersonDetail(elements[0].index); },
+    onHover:(evt, elements) => {
+      const t = evt && evt.native && evt.native.target;
+      if (t) t.style.cursor = (elements && elements.length) ? 'pointer' : 'default';
+    }
+  };
+}
+
+// click a bar -> popup showing only the details of that one open case
+function openAgingPersonDetail(idx){
+  const sel = agingSorted[idx];
+  if (!sel) return;
+  CARD_DETAIL_DEFS.agingPerson = {
+    title: () => [sel.line1, sel.person].filter(Boolean).join(' · '),
+    sub: () => `งานที่ค้าง ${sel.duration.toLocaleString()} วัน`,
+    roles: [],
+    allColumns: true,
+    getRows: () => [sel.row]
+  };
+  openCardDetailModal('agingPerson');
 }
 
 function onAgingTopNChange(){
@@ -3534,6 +3694,18 @@ function openChartModal(btnEl){
   const clonedData = JSON.parse(JSON.stringify(cfg.data));
   const clonedOptions = JSON.parse(JSON.stringify(cfg.options || {}));
   clonedOptions.maintainAspectRatio = false;
+  if (canvas.id === 'personChart'){
+    const po = personChartOptions();
+    Object.assign(clonedOptions, { onClick: po.onClick, onHover: po.onHover });
+  }
+  if (canvas.id === 'agingChart'){
+    const ao = agingChartOptions();
+    Object.assign(clonedOptions, { onClick: ao.onClick, onHover: ao.onHover });
+    clonedOptions.plugins = clonedOptions.plugins || {};
+    clonedOptions.plugins.tooltip = ao.plugins.tooltip;
+  }
+  const extraDef = extraChartDefs.find(x => x.canvasId === canvas.id);
+  if (extraDef) Object.assign(clonedOptions, { onClick: extraCategoryChartOptions(extraDef.col).onClick, onHover: extraCategoryChartOptions(extraDef.col).onHover });
 
   modalChartInstance = new Chart(modalCanvas, {
     type: cfg.type,
@@ -3593,6 +3765,13 @@ const CARD_DETAIL_DEFS = {
 
 // like buildColumnDefs(), but restricted to a given list of known roles (no EXTRA_COLS),
 // used so the card-detail popup only shows fields relevant to that specific card
+function getCardDetailColDefs(def){
+  if (def.allColumns) return buildColumnDefs();   // same columns as the raw data table
+  const defs = buildColumnDefsForRoles(def.roles);
+  (def.extraCols || []).forEach(f => defs.push({ field: f, label: f, role: null }));
+  return defs;
+}
+
 function buildColumnDefsForRoles(roles){
   const labels = { cpn:'CPN', no:'No.', type:'ประเภทเรื่อง', unit:'หน่วยงาน', person:'ผู้รับผิดชอบ',
     status:'สถานะ', criteria:'เกณฑ์', duration:'จำนวนวัน', dataOk:'ข้อมูล' };
@@ -3609,10 +3788,10 @@ function openCardDetailModal(kind){
   if (!def) return;
   cardDetailKind = kind;
   cardDetailRows = def.getRows();
-  const colDefs = buildColumnDefsForRoles(def.roles);
+  const colDefs = getCardDetailColDefs(def);
 
   document.getElementById('cardDetailTitle').textContent = typeof def.title === 'function' ? def.title() : def.title;
-  document.getElementById('cardDetailSub').textContent = `${cardDetailRows.length.toLocaleString()} รายการ`;
+  document.getElementById('cardDetailSub').textContent = def.sub ? def.sub() : `${cardDetailRows.length.toLocaleString()} รายการ`;
 
   document.getElementById('cardDetailHead').innerHTML =
     '<tr>' + colDefs.map(d => `<th>${escapeHtml(d.label)}</th>`).join('') + '</tr>';
@@ -3620,9 +3799,32 @@ function openCardDetailModal(kind){
     ? cardDetailRows.map(d => `<tr>${buildDataRowCells(d, colDefs)}</tr>`).join('')
     : `<tr><td colspan="${colDefs.length}" class="card-detail-empty">ไม่มีข้อมูลตามเงื่อนไขนี้</td></tr>`;
 
+  document.getElementById('cardDetailSummary').innerHTML = def.summary ? def.summary() : '';
+  fitCardDetailTable();
+  if (def.highlightFirst && cardDetailRows.length){
+    const firstRow = document.querySelector('#cardDetailBody tr');
+    if (firstRow) firstRow.classList.add('cd-hl');
+  }
   document.getElementById('cardDetailOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+// shrink the table text step by step until it fits the popup without scrolling (down to a readable minimum)
+function fitCardDetailTable(){
+  const overlay = document.getElementById('cardDetailOverlay');
+  if (!overlay || !overlay.classList.contains('open')) return;
+  const table = document.getElementById('cardDetailTable');
+  const wrap = table.parentElement;
+  const body = wrap.parentElement;
+  table.style.fontSize = '';
+  let f = 0.8;
+  const overflowing = () => wrap.scrollWidth > wrap.clientWidth + 1 || body.scrollHeight > body.clientHeight + 1;
+  while (overflowing() && f > 0.6){
+    f = Math.round((f - 0.02) * 100) / 100;
+    table.style.fontSize = f + 'em';
+  }
+}
+window.addEventListener('resize', fitCardDetailTable);
 
 function closeCardDetailModal(){
   document.getElementById('cardDetailOverlay').classList.remove('open');
@@ -3685,7 +3887,7 @@ function getExportMeta(kind){
   }
   if (kind === 'cardDetail'){
     const def = CARD_DETAIL_DEFS[cardDetailKind] || { title: () => 'รายละเอียด', roles: [] };
-    const colDefs = buildColumnDefsForRoles(def.roles);
+    const colDefs = getCardDetailColDefs(def);
     const header = colDefs.map(d => d.label);
     const rows = cardDetailRows.map(d => colDefs.map(cd => String(d[cd.field] ?? '-')));
     const title = typeof def.title === 'function' ? def.title() : def.title;
@@ -3907,6 +4109,7 @@ document.addEventListener('keydown', (e) => {
             </button>
           </div>
         </div>
+        <div id="cardDetailSummary"></div>
         <div class="card-detail-table-wrap">
           <table id="cardDetailTable">
             <thead id="cardDetailHead"></thead>
