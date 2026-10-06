@@ -1442,7 +1442,7 @@
         <section class="panel" id="section-charts">
           <div class="panel-head">
             <h2>กราฟวิเคราะห์</h2>
-            <span class="panel-sub" id="chartsSectionSub">10 มุมมองข้อมูล</span>
+            <span class="panel-sub" id="chartsSectionSub">11 มุมมองข้อมูล</span>
           </div>
           <div class="chart-tabs" id="chartTabs" role="tablist">
             <button class="chart-tab active" data-tab="overview" role="tab"><i style="background:var(--violet)"></i>ภาพรวม</button>
@@ -1509,10 +1509,18 @@
             </div>
             <div class="chart-card">
               <div class="chart-card-head">
-                <h3><i style="background:#6D6AF6"></i>Top <select id="personTopN" class="topn-select" onchange="onPersonTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผู้รับผิดชอบ (จำนวนงาน)</h3>
+                <h3><i style="background:#0EA5A0"></i>Top <select id="personDoneTopN" class="topn-select" onchange="onPersonDoneTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผู้รับผิดชอบ (งานแล้วเสร็จ)</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
-              <div class="chart-sub">จำนวนงานของผู้รับผิดชอบแต่ละคน เรียงจากมากไปน้อย · คลิกที่แท่งเพื่อดูรายละเอียดงาน</div>
+              <div class="chart-sub">จำนวนงานที่แล้วเสร็จของผู้รับผิดชอบแต่ละคน เรียงจากมากไปน้อย · คลิกที่แท่งเพื่อดูเฉพาะงานที่แล้วเสร็จ</div>
+              <canvas id="personDoneChart"></canvas>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-head">
+                <h3><i style="background:#E8A33D"></i>Top <select id="personTopN" class="topn-select" onchange="onPersonTopNChange()"><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="999">ทั้งหมด</option></select> ผู้รับผิดชอบ (งานกำลังดำเนินการ)</h3>
+                <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
+              </div>
+              <div class="chart-sub">จำนวนงานที่กำลังดำเนินการของผู้รับผิดชอบแต่ละคน เรียงจากมากไปน้อย · คลิกที่แท่งเพื่อดูเฉพาะงานที่กำลังดำเนินการ</div>
               <canvas id="personChart"></canvas>
             </div>
             <div class="chart-card aging-card">
@@ -2409,7 +2417,7 @@ function uploadNewFile(){
   document.getElementById('extraFiltersContainer').innerHTML = '';
   document.querySelectorAll('#mainChartsGrid .extra-chart-card').forEach(el => el.remove());
   const subEl = document.getElementById('chartsSectionSub');
-  if (subEl) subEl.textContent = '10 มุมมองข้อมูล';
+  if (subEl) subEl.textContent = '11 มุมมองข้อมูล';
 }
 
 function downloadSample(){
@@ -3653,7 +3661,7 @@ function personChartOptions(){
     scales:{ x:{ beginAtZero:true, grid:{color:'#EEF1F7'}, ticks:{ precision:0 } }, y:{ grid:{display:false} } },
     onClick:(evt, elements, chart) => {
       if (!elements || !elements.length) return;
-      openPersonDetail(chart.data.labels[elements[0].index]);
+      openPersonDetail(chart.data.labels[elements[0].index], (chart.data.datasets[0] || {}).statusMode);
     },
     onHover:(evt, elements) => {
       const t = evt && evt.native && evt.native.target;
@@ -3663,30 +3671,34 @@ function personChartOptions(){
 }
 
 function createPersonChart(){
-  const el = document.getElementById('personChart');
-  if (!el) return;
-  const stats = {};
-  filteredData.forEach(d => { const n = String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ'; stats[n] = (stats[n]||0)+1; });
-  const topNSelect = document.getElementById('personTopN');
-  const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
-  const sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'th')).slice(0, topN);
-  charts.personChart = new Chart(el, {
-    type:'bar',
-    data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'จำนวนงาน', data:sorted.map(s=>s[1]), backgroundColor:'#6D6AF6', borderRadius:5 }] },
-    options: personChartOptions()
+  [['personDoneChart','personDoneTopN',true,'#0EA5A0'],['personChart','personTopN',false,'#E8A33D']].forEach(([cid,selId,wantDone,color]) => {
+    const el = document.getElementById(cid);
+    if (!el) return;
+    if (charts[cid]){ charts[cid].destroy(); delete charts[cid]; }
+    const stats = {};
+    filteredData.filter(d => (d[COLS.status] === 'แล้วเสร็จ') === wantDone).forEach(d => { const n = String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ'; stats[n] = (stats[n]||0)+1; });
+    const topNSelect = document.getElementById(selId);
+    const topN = topNSelect ? parseInt(topNSelect.value, 10) : 5;
+    const sorted = Object.entries(stats).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'th')).slice(0, topN);
+    charts[cid] = new Chart(el, {
+      type:'bar',
+      data:{ labels:sorted.map(s=>s[0]), datasets:[{ statusMode:wantDone?'done':'open', label:wantDone?'งานแล้วเสร็จ':'งานกำลังดำเนินการ', data:sorted.map(s=>s[1]), backgroundColor:color, borderRadius:5 }] },
+      options: personChartOptions()
+    });
   });
 }
+function onPersonDoneTopNChange(){ createPersonChart(); }
 
 // click a bar -> popup with every case of that person, in the same columns as the raw data table
-function openPersonDetail(name){
+function openPersonDetail(name, mode){
   const isDone = d => d[COLS.status] === 'แล้วเสร็จ';
   const dur = d => parseFloat(d[COLS.duration]) || 0;
-  const rows = filteredData.filter(d => (String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ') === name);
+  const rows = filteredData.filter(d => (String(d[COLS.person] ?? '').trim() || 'ไม่ระบุ') === name && (!mode || (mode === 'done') === isDone(d)));
   rows.sort((a,b) => (isDone(a) - isDone(b)) || (dur(b) - dur(a)));   // open cases first, longest first
   const done = rows.filter(isDone).length;
   CARD_DETAIL_DEFS.personDetail = {
-    title: () => `งานของ ${name}`,
-    sub: () => `${rows.length.toLocaleString()} รายการ · แล้วเสร็จ ${done.toLocaleString()} · ยังไม่เสร็จ ${(rows.length - done).toLocaleString()}`,
+    title: () => mode === 'done' ? `งานที่แล้วเสร็จของ ${name}` : mode === 'open' ? `งานที่กำลังดำเนินการของ ${name}` : `งานของ ${name}`,
+    sub: () => mode ? `${rows.length.toLocaleString()} รายการ` : `${rows.length.toLocaleString()} รายการ · แล้วเสร็จ ${done.toLocaleString()} · ยังไม่เสร็จ ${(rows.length - done).toLocaleString()}`,
     roles: [],
     allColumns: true,
     getRows: () => rows
@@ -3694,10 +3706,7 @@ function openPersonDetail(name){
   openCardDetailModal('personDetail');
 }
 
-function onPersonTopNChange(){
-  if (charts.personChart) charts.personChart.destroy();
-  createPersonChart();
-}
+function onPersonTopNChange(){ createPersonChart(); }
 
 function createDataCompletenessChart(){
   const doneRows = filteredData.filter(d => d[COLS.status] === 'แล้วเสร็จ');
@@ -4088,7 +4097,7 @@ function openChartModal(btnEl){
   const clonedData = JSON.parse(JSON.stringify(cfg.data));
   const clonedOptions = JSON.parse(JSON.stringify(cfg.options || {}));
   clonedOptions.maintainAspectRatio = false;
-  if (canvas.id === 'personChart'){
+  if (canvas.id === 'personChart' || canvas.id === 'personDoneChart'){
     const po = personChartOptions();
     Object.assign(clonedOptions, { onClick: po.onClick, onHover: po.onHover });
   }
@@ -4639,9 +4648,9 @@ document.addEventListener('keydown', (e) => {
 (function(){
   var G={statusChart:'overview',unitChart:'overview',unitProgressChart:'overview',
     criteriaChart:'overview',unitRateChart:'done',durationChart:'done',dataCompletenessChart:'done',
-    agingChart:'progress',personChart:'progress'};
+    agingChart:'progress',personChart:'progress',personDoneChart:'done'};
   var D={overview:'สัดส่วนสถานะ การปฏิบัติตามเกณฑ์ และจำนวนเรื่องแยกตามหน่วยงาน',
-    done:'คุณภาพของงานที่ดำเนินการแล้วเสร็จ: ระยะเวลา ความครบถ้วนของข้อมูล และผ่านเกณฑ์รายหน่วยงาน',
+    done:'คุณภาพของงานที่ดำเนินการแล้วเสร็จ: ระยะเวลา ความครบถ้วนของข้อมูล ผ่านเกณฑ์รายหน่วยงาน และผู้รับผิดชอบ',
     progress:'งานที่ยังไม่เสร็จ: อายุงานค้างตามระดับความเสี่ยง และงานค้างรายผู้รับผิดชอบ'};
   var cur='overview',grid=document.getElementById('mainChartsGrid');
   function grp(c){var cv=c.querySelector('canvas');return (cv&&G[cv.id])||'overview';}
