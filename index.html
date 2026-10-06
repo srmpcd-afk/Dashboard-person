@@ -1450,7 +1450,7 @@
                 <h3><i style="background:var(--violet)"></i>การปฏิบัติตามเกณฑ์</h3>
                 <button class="chart-expand-btn" onclick="openChartModal(this)" title="ขยายกราฟ" aria-label="ขยายกราฟ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"></path></svg></button>
               </div>
-              <div class="chart-sub">งานที่ผ่าน / ไม่ผ่านเกณฑ์การปฏิบัติงาน</div>
+              <div class="chart-sub">งานที่ผ่าน / ไม่ผ่านเกณฑ์ ของเรื่องทั้งหมด</div>
               <canvas id="criteriaChart"></canvas>
             </div>
             <div class="chart-card">
@@ -1530,11 +1530,11 @@
                 <tr>
                   <th>หน่วยงาน</th>
                   <th>ประเภทเรื่อง</th>
-                  <th class="num">จำนวนงาน</th>
-                  <th class="num">แล้วเสร็จ</th>
-                  <th class="num">อยู่ระหว่างดำเนินการ</th>
+                  <th class="num">จำนวนงาน (เรื่อง)</th>
+                  <th class="num">แล้วเสร็จ (เรื่อง)</th>
+                  <th class="num">อยู่ระหว่างดำเนินการ (เรื่อง)</th>
                   <th class="num">อัตราสำเร็จ</th>
-                  <th class="num">ข้อมูลครบถ้วน</th>
+                  <th class="num">ข้อมูลครบถ้วน (เรื่อง)</th>
                   <th class="num">อัตราครบถ้วน</th>
                 </tr>
               </thead>
@@ -2425,7 +2425,7 @@ function buildColumnDefs(){
   ];
   const defs = [];
   known.forEach(k => { if (COLS[k.role]) defs.push({ field: COLS[k.role], label: k.label, role: k.role }); });
-  EXTRA_COLS.forEach(f => defs.push({ field: f, label: f, role: null }));
+  EXTRA_COLS.forEach(f => defs.push({ field: f, label: (typeof extraChartTitle === 'function' ? extraChartTitle(f) : f), role: null }));
   return defs;
 }
 
@@ -3112,6 +3112,35 @@ function updateOverview(){
 /* ============ charts ============ */
 const FONT = "'IBM Plex Sans Thai', sans-serif";
 Chart.defaults.font.family = FONT;
+
+/* center total for every doughnut chart (also applies to the expanded modal chart) */
+Chart.register({
+  id:'doughnutCenterTotal',
+  afterDraw(chart){
+    if (chart.config.type !== 'doughnut') return;
+    const ds = chart.data.datasets[0];
+    const meta = chart.getDatasetMeta(0);
+    if (!ds || !meta || !meta.data.length) return;
+    let total = 0;
+    (ds.data || []).forEach((v, i) => { if (chart.getDataVisibility(i)) total += Number(v) || 0; });
+    const arc = meta.data[0];
+    const inner = arc.innerRadius || 0;
+    if (!inner) return;
+    const ctx = chart.ctx;
+    const numSize = Math.max(16, Math.min(44, inner * 0.55));
+    const lblSize = Math.max(10, Math.min(15, inner * 0.2));
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = Chart.defaults.color;
+    ctx.font = `700 ${numSize}px ${FONT}`;
+    ctx.fillText(total.toLocaleString(), arc.x, arc.y - lblSize * 0.6);
+    ctx.globalAlpha = 0.7;
+    ctx.font = `500 ${lblSize}px ${FONT}`;
+    ctx.fillText('ทั้งหมด', arc.x, arc.y + numSize * 0.55);
+    ctx.restore();
+  }
+});
 Chart.defaults.color = getChartThemeColors(document.documentElement.getAttribute('data-theme') === 'dark').text;
 
 function updateCharts(){
@@ -3231,7 +3260,8 @@ let extraChartDefs = [];
 const EXTRA_CHART_OVERRIDES = {
   'ระดับผลดำเนินการ': {
     title: 'ระดับความยากของงาน', type: 'doughnut', labelPrefix: 'ระดับ ',
-    levelNames: { '1':'อื่นๆ', '2':'ทำส.', '3':'ช่วงตรวจสอบ', '4':'ตรวจสอบ' }
+    footnote: 'หมายเหตุ: ระดับความยากของงานแบ่งตามประเภทการมอบหมายงาน',
+    levelNames: { '1':'อื่นๆ', '2':'ทำส.', '3':'ร่วมตรวจสอบ', '4':'ตรวจสอบ' }
   }
 };
 // text shown for a raw category value (e.g. "3" -> "ระดับ 3 (ช่วงตรวจสอบ)")
@@ -3274,6 +3304,7 @@ function renderExtraAnalysis(){
         <div class="chart-sub">จำนวนงานแบ่งตาม${EXTRA_CHART_OVERRIDES[col] ? '' : ' '}${escapeHtml(extraChartTitle(col))} · คลิกที่${EXTRA_CHART_OVERRIDES[col] && ['pie','doughnut'].includes(EXTRA_CHART_OVERRIDES[col].type) ? 'ชิ้นส่วน' : 'แท่ง'}เพื่อดูรายละเอียด</div>
         ${extraLegendNote(col) ? `<div class="chart-note">${escapeHtml(extraLegendNote(col))}</div>` : ''}
         <canvas id="${canvasId}"></canvas>
+        ${EXTRA_CHART_OVERRIDES[col] && EXTRA_CHART_OVERRIDES[col].footnote ? `<div class="chart-sub" style="margin:12px 0 0;text-align:center">${escapeHtml(EXTRA_CHART_OVERRIDES[col].footnote)}</div>` : ''}
       </div>`);
   });
 
@@ -3694,7 +3725,7 @@ function createAgingChart(){
       seenSoFar[k] = (seenSoFar[k] || 0) + 1;
       r.line1 = (r.line1 ? r.line1 + ' ' : '') + `(${seenSoFar[k]})`;
     }
-    r.label = r.line1 ? [r.line1, r.person] : [r.person];   // array => 2-line axis label
+    r.label = r.line1 || r.person;   // code only on the axis (name stays in tooltip/click)
   });
   agingSorted = sorted;
 
