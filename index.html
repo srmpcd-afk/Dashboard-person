@@ -1567,8 +1567,8 @@
               <thead>
                 <tr>
                   <th data-key="name">ผู้รับผิดชอบ <span class="sort-arrow">↕</span></th>
-                  <th data-key="total">จำนวนงาน <span class="sort-arrow">↕</span></th>
-                  <th data-key="completed">แล้วเสร็จ <span class="sort-arrow">↕</span></th>
+                  <th data-key="total">จำนวนงาน (เรื่อง) <span class="sort-arrow">↕</span></th>
+                  <th data-key="completed">แล้วเสร็จ (เรื่อง) <span class="sort-arrow">↕</span></th>
                   <th data-key="completionRate">อัตราความสำเร็จ <span class="sort-arrow">↕</span></th>
                   <th data-key="criteriaRate">ตามเกณฑ์ <span class="sort-arrow">↕</span></th>
                   <th data-key="avgDuration">เวลาเฉลี่ย (วัน) <span class="sort-arrow">↕</span></th>
@@ -4340,7 +4340,7 @@ function buildPerformanceTableAOA(){
     if (typeof av === 'string') return av.localeCompare(bv,'th') * dir;
     return (av - bv) * dir;
   });
-  const header = ['ผู้รับผิดชอบ','จำนวนงาน','แล้วเสร็จ','อัตราความสำเร็จ','ตามเกณฑ์','เวลาเฉลี่ย (วัน)','ประสิทธิภาพตามเกณฑ์'];
+  const header = ['ผู้รับผิดชอบ','จำนวนงาน (เรื่อง)','แล้วเสร็จ (เรื่อง)','อัตราความสำเร็จ','ตามเกณฑ์','เวลาเฉลี่ย (วัน)','ประสิทธิภาพตามเกณฑ์'];
   const body = rows.map(s => {
     const label = s.performanceRank===3 ? 'สูง' : s.performanceRank===2 ? 'ปานกลาง' : 'ต้องปรับปรุง';
     return [s.name, s.total, s.completed, s.completionRate.toFixed(1)+'%', s.criteriaRate.toFixed(1)+'%', s.avgDuration.toFixed(1), label];
