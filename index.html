@@ -1174,6 +1174,18 @@
   .chart-tab.active{background:var(--surface);color:var(--text-900);box-shadow:var(--shadow-card)}
   .chart-tab-desc{font-size:.84em;color:var(--text-600);margin:-6px 2px 14px}
   #mainChartsGrid > .chart-card.tab-hidden{display:none !important}
+  /* ---------- password gate for "เปลี่ยนแหล่งข้อมูล" ---------- */
+  .pw-modal{background:var(--surface);color:var(--text-900);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);width:100%;max-width:360px;padding:24px;}
+  .pw-modal h3{font-size:1.1em;margin-bottom:4px;}
+  .pw-modal .pw-sub{color:var(--text-600);font-size:.86em;margin-bottom:14px;}
+  .pw-modal input{width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;font-size:.95em;background:var(--surface);color:var(--text-900);outline:none;}
+  .pw-modal input:focus{border-color:var(--teal);}
+  .pw-modal.error input{border-color:var(--coral);}
+  .pw-err{color:var(--coral);font-size:.82em;margin-top:8px;min-height:1.2em;}
+  .pw-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+  .pw-actions button{border:1px solid var(--line);background:var(--surface-alt);color:var(--text-900);border-radius:var(--radius-sm);padding:8px 16px;font-size:.88em;cursor:pointer;}
+  .pw-actions button.ok{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .pw-actions button.ok:hover{background:var(--teal-dark);}
 </style>
 </head>
 <body>
@@ -1279,7 +1291,7 @@
       </nav>
 
       <div class="sidebar-foot">
-        <button class="foot-btn" onclick="uploadNewFile()">
+        <button class="foot-btn" onclick="openPasswordModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
           เปลี่ยนแหล่งข้อมูล
         </button>
@@ -2416,6 +2428,34 @@ function formatFileSize(bytes){
   return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
+const CHANGE_SOURCE_PASSWORD = '@123456';
+function openPasswordModal(){
+  const inp = document.getElementById('pwInput');
+  inp.value = '';
+  document.getElementById('pwErr').textContent = '';
+  document.getElementById('pwModal').classList.remove('error');
+  document.getElementById('pwOverlay').classList.add('open');
+  setTimeout(() => inp.focus(), 30);
+}
+function closePasswordModal(){
+  document.getElementById('pwOverlay').classList.remove('open');
+  document.getElementById('pwInput').value = '';
+}
+function submitPassword(){
+  const inp = document.getElementById('pwInput');
+  if (inp.value === CHANGE_SOURCE_PASSWORD){
+    closePasswordModal();
+    uploadNewFile();
+  } else {
+    document.getElementById('pwErr').textContent = 'รหัสผ่านไม่ถูกต้อง';
+    document.getElementById('pwModal').classList.add('error');
+    inp.select();
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('pwOverlay').classList.contains('open')) closePasswordModal();
+});
+
 function uploadNewFile(){
   stopAutoRefresh();
   dataSourceType = null; sheetId = ''; sheetGid = '0'; sheetLabel = ''; subSheetResolved = null; setTopbarSubtitle(null);
@@ -3333,7 +3373,9 @@ function renderExtraAnalysis(){
   const grid = document.getElementById('mainChartsGrid');
   const catCols = categoricalExtraColumns();
   const allNumCols = numericExtraColumns();
-  const numCols = allNumCols.filter(c => !catCols.includes(c));
+  // date columns (e.g. วันที่เริ่มนับ / วันที่เสร็จ) are not meaningful as sum/avg cards -> skip them
+  const isDateCol = c => /วันที่/.test(String(c));
+  const numCols = allNumCols.filter(c => !catCols.includes(c) && !isDateCol(c));
 
   grid.querySelectorAll('.extra-chart-card').forEach(el => el.remove());
   extraChartDefs = [];
@@ -4648,7 +4690,21 @@ function closePdfPreview(){
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closePdfPreview();
 });
-</script>  <!-- ============ CHART EXPAND MODAL ============ -->
+</script>  <!-- ============ PASSWORD MODAL (change data source) ============ -->
+  <div class="chart-modal-overlay" id="pwOverlay" onclick="if(event.target===this) closePasswordModal();">
+    <div class="pw-modal" id="pwModal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+      <h3 id="pwTitle">ใส่รหัสผ่าน</h3>
+      <div class="pw-sub">กรุณาใส่รหัสก่อนเปลี่ยนแหล่งข้อมูล</div>
+      <input type="password" id="pwInput" autocomplete="off" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter') submitPassword();">
+      <div class="pw-err" id="pwErr"></div>
+      <div class="pw-actions">
+        <button type="button" onclick="closePasswordModal()">ยกเลิก</button>
+        <button type="button" class="ok" onclick="submitPassword()">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CHART EXPAND MODAL ============ -->
   <div class="chart-modal-overlay" id="chartModalOverlay" onclick="if(event.target===this) closeChartModal();">
     <div class="chart-modal">
       <div class="chart-modal-head">
